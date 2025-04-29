@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Enable Selects and Buttons + Add Download Buttons with Correct Filename on watt-else.pro
 // @namespace    http://tampermonkey.net/
-// @version      1.1
+// @version      1.2
 // @description  Enables inputs and adds download buttons that fetch and save files with correct filenames on watt-else.pro (PDFs, images, etc.)
 // @author       You
 // @match        https://watt-else.pro/*
