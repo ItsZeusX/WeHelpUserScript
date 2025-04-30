@@ -13,6 +13,18 @@
 (function () {
   "use strict";
 
+  // Load Poppins font from Google Fonts
+  function loadPoppinsFont() {
+    const fontLink = document.createElement("link");
+    fontLink.rel = "stylesheet";
+    fontLink.href =
+      "https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap";
+    document.head.appendChild(fontLink);
+  }
+
+  // Load font as soon as script runs
+  loadPoppinsFont();
+
   // Create and inject toast container
   function createToastContainer() {
     const container = document.getElementById("toast-container");
@@ -52,8 +64,8 @@
     toast.style.boxShadow = "-2px 0px 74px -18px rgba(0,0,0,0.75)";
     toast.style.webkitBoxShadow = "-2px 0px 74px -18px rgba(0,0,0,0.75)";
     toast.style.mozBoxShadow = "-2px 0px 74px -18px rgba(0,0,0,0.75)";
-    toast.style.fontFamily = "Arial, sans-serif";
-    toast.style.fontSize = "14px";
+    toast.style.fontFamily = "'Poppins', Arial, sans-serif";
+    toast.style.fontSize = "16px";
     toast.style.lineHeight = "1.4";
     toast.style.minWidth = "300px";
     toast.style.maxWidth = "400px";
@@ -63,6 +75,37 @@
     toast.style.alignItems = "flex-start";
     toast.style.gap = "12px";
     toast.style.position = "relative";
+
+    // Add pulsing red circle
+    const pulsingCircle = document.createElement("div");
+    pulsingCircle.style.position = "absolute";
+    pulsingCircle.style.top = "-6px";
+    pulsingCircle.style.left = "-8px";
+    pulsingCircle.style.width = "16px";
+    pulsingCircle.style.height = "16px";
+    pulsingCircle.style.borderRadius = "50%";
+    pulsingCircle.style.backgroundColor = "#FF4136";
+    pulsingCircle.style.animation = "pulse-animation 1.5s infinite";
+
+    // Add the CSS animation if it doesn't exist already
+    if (!document.getElementById("pulse-animation-style")) {
+      const style = document.createElement("style");
+      style.id = "pulse-animation-style";
+      style.textContent = `
+        @keyframes pulse-animation {
+          0% {
+            box-shadow: 0 0 0 0 rgba(255, 65, 54, 0.7);
+          }
+          70% {
+            box-shadow: 0 0 0 10px rgba(255, 65, 54, 0);
+          }
+          100% {
+            box-shadow: 0 0 0 0 rgba(255, 65, 54, 0);
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
 
     // Set color based on type
     let iconHTML, bgColor;
@@ -77,13 +120,13 @@
         bgColor = "#fff";
         iconHTML =
           '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="12" fill="#F44336" fill-opacity="0.2"/><path d="M15 9L9 15M9 9L15 15" stroke="#F44336" stroke-width="2" stroke-linecap="round"/></svg>';
-        if (!title) title = "Transa";
+        if (!title) title = "Attention";
         break;
       case "warning":
         bgColor = "#fff";
         iconHTML =
           '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="12" fill="#FF9800" fill-opacity="0.2"/><path d="M12 8V13M12 16V16.01" stroke="#FF9800" stroke-width="2" stroke-linecap="round"/></svg>';
-        if (!title) title = "Warning";
+        if (!title) title = "Attention";
         break;
       case "info":
       default:
@@ -110,13 +153,15 @@
     titleElement.textContent = title;
     titleElement.style.fontWeight = "600";
     titleElement.style.marginBottom = "4px";
-    titleElement.style.fontSize = "16px";
+    titleElement.style.fontSize = "18px";
+    titleElement.style.fontFamily = "'Poppins', Arial, sans-serif";
     contentContainer.appendChild(titleElement);
 
     // Create message element
     const messageElement = document.createElement("div");
     messageElement.textContent = message;
     messageElement.style.color = "#333";
+    messageElement.style.fontFamily = "'Poppins', Arial, sans-serif";
     contentContainer.appendChild(messageElement);
 
     // Add close button
@@ -137,6 +182,7 @@
     toast.appendChild(iconContainer);
     toast.appendChild(contentContainer);
     toast.appendChild(closeBtn);
+    toast.appendChild(pulsingCircle); // Add pulsing circle to toast
 
     // Add toast to container and make it visible
     container.appendChild(toast);
@@ -160,16 +206,19 @@
   }
 
   /**
-   * Checks if a div with class "portlet-body affectation background-success" contains any of the specified strings
+   * Checks if a div with the specified selector contains any of the specified strings
    * @param {string[]} searchStrings - Array of strings to search for in the div
-   * @param {boolean} showToastOnMatch - Whether to show a toast notification when a match is found
+   * @param {string} targetSelector - CSS selector for the target element to search in
    * @return {boolean} - True if any of the strings are found, false otherwise
    */
-  function checkDivForStrings(searchStrings, showToastOnMatch = true) {
-    const targetDiv = document.querySelector(".portlet-body.affectation");
+  function checkDivForStrings(
+    searchStrings,
+    targetSelector = ".portlet-body.affectation"
+  ) {
+    const targetDiv = document.querySelector(targetSelector);
 
     if (!targetDiv) {
-      console.log("Target div not found");
+      console.log(`Target div not found: ${targetSelector}`);
       return false;
     }
 
@@ -177,38 +226,99 @@
 
     for (const str of searchStrings) {
       if (divText.includes(str)) {
-        if (showToastOnMatch) {
-          showToast(`Found match: "${str}" in target div`, "danger", 500000);
-        }
         console.log(`Found match: "${str}" in target div`);
         return true;
       }
     }
 
-    console.log("No matches found in target div");
+    console.log(`No matches found in target div: ${targetSelector}`);
     return false;
   }
 
   /**
-   * Checks for the presence of specific strings in the target div when the page loads
+   * Checks if the case belongs to a broker and shows a toast notification if it does
+   * @param {string[]} brokerNames - Array of broker names to check for
+   * @param {string} targetSelector - CSS selector for the target element to search in
+   * @return {boolean} - True if broker name is found, false otherwise
    */
-  function checkForStringsOnLoad() {
-    // Set a small delay to ensure the DOM is fully loaded
-    setTimeout(() => {
-      // Check for "EUROSTRAT" in the target div
-      const result = checkDivForStrings(
-        ["EUROSTRAT", "MA NOUVELLE ENERGIE"],
-        true
-      );
+  function checkBroker(brokerNames) {
+    const result = checkDivForStrings(brokerNames, ".portlet-body.affectation");
 
-      if (result) {
-        console.log("EUROSTRAT found in the target div on page load");
-      } else {
-        console.log("EUROSTRAT not found in the target div on page load");
-        // No periodic checks - just show a one-time notification
-        showToast(`"EUROSTRAT" not found in target div`, "warning", 500000);
+    if (result) {
+      // Find which broker name matched
+      const targetDiv = document.querySelector(".portlet-body.affectation");
+      const divText = targetDiv.innerText || targetDiv.textContent || "";
+
+      for (const brokerName of brokerNames) {
+        if (divText.includes(brokerName)) {
+          showToast(
+            `Cette affaire appartient au courtier ${brokerName}, il faut la remonter à l'animateur avant de valider`,
+            "error",
+            500000
+          );
+          break;
+        }
       }
-    }, 1000);
+    }
+
+    return result;
+  }
+
+  /**
+   * Checks if the decommission is for a broker that should not be processed until a certain date
+   * and shows a toast notification if it does
+   * @param {string[]} brokerNames - Array of broker names to check for
+   * @return {boolean} - True if broker name is found, false otherwise
+   */
+  function checkBrokersForDecom(brokerNames) {
+    // Only run on the specific decommission URL
+    if (window.location.href !== "https://watt-else.pro/decommissions/decommissions_en_attente") {
+      return false;
+    }
+
+    const swalContent = document.getElementById("swal2-content");
+    if (!swalContent) {
+      return false;
+    }
+
+    // Find the table in the swal content
+    const table = swalContent.querySelector("table tbody");
+    console.log(table);
+    
+    if (!table) {
+      return false;
+    }
+    
+
+    // Get the first row
+    const firstRow = table.querySelector("tr");
+    if (!firstRow) {
+      return false;
+    }
+
+    // Get the second cell in the first row
+    const secondCell = firstRow.querySelectorAll("td")[1];
+    if (!secondCell) {
+      return false;
+    }
+
+    const cellText = secondCell.innerText || secondCell.textContent || "";
+    let foundMatch = false;
+
+    // Check if the cell text contains any of the broker names
+    for (const str of brokerNames) {
+      if (cellText.includes(str)) {
+        showToast(
+          `Il faut pas traiter les decommission courtier pour ${str} jusqu'a 02/04/2025`,
+          "error",
+          500000
+        );
+        foundMatch = true;
+        break;
+      }
+    }
+
+    return foundMatch;
   }
 
   function EnableRelanceAndQualificationInputs() {
@@ -260,108 +370,32 @@
     }
   }
 
-  function AddDownloadLinksToMtInfo() {
-    const mtInfoLists = document.querySelectorAll("ul.mt-info");
-    mtInfoLists.forEach((ul) => {
-      if (ul.dataset.linksAdded === "true") return;
+  EnableRelanceAndQualificationInputs();
+  checkBroker(["7 COM 7"], ".portlet-body.affectation", true);
 
-      const firstLi = ul.querySelector("li");
-      if (firstLi) {
-        const link = firstLi.querySelector("a");
-        console.log(link);
-        if (link) {
-          // Try to get data-src first
-          let fileUrl = link.getAttribute("data-src");
+  // Observer for enabling inputs and buttons
+  const observer = new MutationObserver(() => {
+    EnableRelanceAndQualificationInputs();
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
 
-          // If data-src is not valid, fallback to href
-          if (!fileUrl || !isValidUrl(fileUrl)) {
-            fileUrl = link.href;
-          }
-
-          if (fileUrl && isValidUrl(fileUrl)) {
-            const newLi = document.createElement("li");
-            const newA = document.createElement("a");
-            newA.className = "btn default btn-outline nolock";
-            newA.href = "#"; // prevent default behavior
-            newA.innerHTML = '<i class="icon-magnifier"></i>';
-
-            // Attach click handler
-            newA.addEventListener("click", async (e) => {
-              e.preventDefault();
-              try {
-                const response = await fetch(fileUrl);
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-
-                const tempLink = document.createElement("a");
-                tempLink.href = url;
-
-                // Try to extract filename from headers first
-                const contentDisposition = response.headers.get(
-                  "Content-Disposition"
-                );
-                let filename =
-                  getFilenameFromContentDisposition(contentDisposition);
-                if (!filename) {
-                  filename = getFilenameFromURL(fileUrl);
-                }
-
-                tempLink.download = filename;
-                document.body.appendChild(tempLink);
-                tempLink.click();
-                document.body.removeChild(tempLink);
-                window.URL.revokeObjectURL(url);
-              } catch (error) {
-                console.error("Download failed:", error);
-              }
-            });
-
-            newLi.appendChild(newA);
-            ul.appendChild(newLi);
-            ul.dataset.linksAdded = "true";
+  // Observer for the decommission brokers check
+  if (window.location.href === "https://watt-else.pro/decommissions/decommissions_en_attente") {
+    const decomObserver = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.addedNodes && mutation.addedNodes.length > 0) {
+          // Check if swal2-content div has appeared
+          const swalContent = document.getElementById("swal2-content");
+          if (swalContent) {
+            // Call the check function with an array of broker names to look for
+            checkBrokersForDecom(["UTILITY FRANCE LIMITED"]);
           }
         }
       }
     });
+    // Observe the entire document for the swal popup to appear
+    decomObserver.observe(document.body, { childList: true, subtree: true });
+
+    console.log("Decommission broker observer started on decommissions page");
   }
-
-  // Helper function to validate URL
-  function isValidUrl(url) {
-    try {
-      new URL(url);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  function getFilenameFromContentDisposition(contentDisposition) {
-    if (!contentDisposition) return null;
-    const filenameMatch = contentDisposition.match(
-      /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/
-    );
-    if (filenameMatch && filenameMatch[1]) {
-      return filenameMatch[1].replace(/['"]/g, ""); // Remove any quotes
-    }
-    return null;
-  }
-
-  function getFilenameFromURL(url) {
-    const parts = url.split("/");
-    let filename = parts.pop() || "downloaded_file";
-    if (filename.includes("?")) {
-      filename = filename.split("?")[0];
-    }
-    return filename;
-  }
-
-  EnableRelanceAndQualificationInputs();
-  AddDownloadLinksToMtInfo();
-  checkForStringsOnLoad(); // Check for EUROSTRAT when the page loads
-
-  const observer = new MutationObserver(() => {
-    EnableRelanceAndQualificationInputs();
-    AddDownloadLinksToMtInfo();
-  });
-  observer.observe(document.body, { childList: true, subtree: true });
 })();
