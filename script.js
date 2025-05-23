@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Enable Selects and Buttons + Add Download Buttons with Correct Filename on watt-else.pro
 // @namespace    http://tampermonkey.net/
-// @version      1.4
+// @version      1.5
 // @description  Enables inputs and adds download buttons that fetch and save files with correct filenames on watt-else.pro (PDFs, images, etc.)
 // @author       You
 // @match        https://watt-else.pro/*
@@ -272,7 +272,10 @@
    */
   function checkBrokersForDecom(brokerNames) {
     // Only run on the specific decommission URL
-    if (window.location.href !== "https://watt-else.pro/decommissions/decommissions_en_attente") {
+    if (
+      window.location.href !==
+      "https://watt-else.pro/decommissions/decommissions_en_attente"
+    ) {
       return false;
     }
 
@@ -284,11 +287,10 @@
     // Find the table in the swal content
     const table = swalContent.querySelector("table tbody");
     console.log(table);
-    
+
     if (!table) {
       return false;
     }
-    
 
     // Get the first row
     const firstRow = table.querySelector("tr");
@@ -337,6 +339,7 @@
       if (select.disabled) {
         select.disabled = false;
         changed = true;
+        document.getElementById("commentaires").disabled = false;
       }
     });
 
@@ -346,20 +349,12 @@
         changeButton.disabled = false;
         changed = true;
       }
-      if (changeButton.classList.contains("disabled")) {
-        changeButton.classList.remove("disabled");
-        changed = true;
-      }
     }
 
     const relanceButton = document.getElementById("pfo_relance_btn");
     if (relanceButton) {
       if (relanceButton.disabled) {
         relanceButton.disabled = false;
-        changed = true;
-      }
-      if (relanceButton.classList.contains("disabled")) {
-        relanceButton.classList.remove("disabled");
         changed = true;
       }
     }
@@ -380,7 +375,10 @@
   observer.observe(document.body, { childList: true, subtree: true });
 
   // Observer for the decommission brokers check
-  if (window.location.href === "https://watt-else.pro/decommissions/decommissions_en_attente") {
+  if (
+    window.location.href ===
+    "https://watt-else.pro/decommissions/decommissions_en_attente"
+  ) {
     const decomObserver = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         if (mutation.addedNodes && mutation.addedNodes.length > 0) {
