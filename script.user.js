@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Enable Selects and Buttons + Add Download Buttons with Correct Filename on watt-else.pro
 // @namespace    https://github.com/ItsZeusX/WeHelpUserScript
-// @version      1.9.11
+// @version      1.9.12
 // @description  Enables inputs and adds download buttons that fetch and save files with correct filenames on watt-else.pro (PDFs, images, etc.)
 // @author       ItsZeusX
 // @match        https://watt-else.pro/*
@@ -322,7 +322,6 @@
 
     return foundMatch;
   }
-
   function EnableRelanceAndQualificationInputs() {
     let changed = false;
 
@@ -342,11 +341,14 @@
         document.getElementById("commentaires").disabled = false;
       }
     });
-
     const changeButton = document.getElementById("change_mandat_status");
     if (changeButton) {
-      if (changeButton.disabled) {
+      if (
+        changeButton.disabled ||
+        changeButton.classList.contains("disabled")
+      ) {
         changeButton.disabled = false;
+        changeButton.classList.remove("disabled");
         changed = true;
       }
     }
@@ -361,19 +363,9 @@
       }
     }
 
-    const changeStatusButton = document.getElementById("mandatStatusButton");
-    if (changeStatusButton) {
-      if (changeStatusButton.disabled) {
-        changeStatusButton.disabled = false;
-        //remove disabled from classlist
-        changeStatusButton.classList.remove("disabled");
-        changed = true;
-      }
-    }
-
-    if (changed && observer) {
-      observer.disconnect();
-      console.log("All elements enabled. MutationObserver stopped.");
+    // Don't disconnect the observer - we need it to continue watching for new elements
+    if (changed) {
+      console.log("Elements enabled. Still watching for new elements.");
     }
   }
 
